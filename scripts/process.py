@@ -11,25 +11,25 @@ def makedirs(x):
     except Exception:
         pass
 
-def primitive(i, o, n, a, m):
+def primitive(i, o, n, a, m, rep):
     makedirs(os.path.split(o)[0])
-    args = (i, o, n, a, m)
-    cmd = 'primitive -r 128 -s 512 -i %s -o %s -n %d -a %d -m %d' % args
+    args = (i, o, n, a, m, rep)
+    cmd = 'primitive -r 256 -bg "#FFFFFF" -i %s -o %s -n %d -a %d -m %d -rep %d' % args
     subprocess.call(cmd, shell=True)
 
-def create_jobs(in_folder, out_folder, n, a, m):
+def create_jobs(in_folder, out_folder, n, a, m, rep):
     result = []
     for name in os.listdir(in_folder):
         base, ext = os.path.splitext(name)
         if ext.lower() not in ['.jpg', '.jpeg', '.png']:
             continue
-        out_name = '%d.%%d.png' % (m)
+        out_name = 'm%d-n%d-rep%d.png' % (m, n, rep)
         in_path = os.path.join(in_folder, name)
         out_path = os.path.join(out_folder, base, out_name)
         if os.path.exists(out_path):
             continue
         key = (base, n, m)
-        args = (in_path, out_path, n, a, m)
+        args = (in_path, out_path, n, a, m, rep)
         result.append((key, args))
     return result
 
@@ -40,7 +40,7 @@ def worker(jobs, done):
         primitive(*job)
         done.put(True)
 
-def process(in_folder, out_folder, nlist, alist, mlist, nworkers):
+def process(in_folder, out_folder, nlist, alist, mlist, replist, nworkers):
     jobs = Queue()
     done = Queue()
     for i in xrange(nworkers):
@@ -49,8 +49,8 @@ def process(in_folder, out_folder, nlist, alist, mlist, nworkers):
         t.start()
     count = 0
     items = []
-    for n, a, m in itertools.product(nlist, alist, mlist):
-        for item in create_jobs(in_folder, out_folder, n, a, m):
+    for n, a, m, rep in itertools.product(nlist, alist, mlist, replist):
+        for item in create_jobs(in_folder, out_folder, n, a, m, rep):
             items.append(item)
     items.sort()
     for _, job in items:
@@ -67,8 +67,9 @@ def log(x):
 
 if __name__ == '__main__':
     args = sys.argv[1:]
-    nlist = [500]
-    alist = [128]
-    mlist = [0, 1, 3, 5]
-    nworkers = 4
-    process(args[0], args[1], nlist, alist, mlist, nworkers)
+    nlist = [50, 100, 150]
+    alist = [0]
+    mlist = [1, 5, 8]
+    replist = [0, 20]
+    nworkers = 1
+    process(args[0], args[1], nlist, alist, mlist, replist, nworkers)
