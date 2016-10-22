@@ -27,10 +27,35 @@ func computeColor(target, current *image.RGBA, lines []Scanline, alpha int) Colo
 	if count == 0 {
 		return Color{}
 	}
+
 	r := clampInt(int(rsum/count)>>8, 0, 255)
 	g := clampInt(int(gsum/count)>>8, 0, 255)
 	b := clampInt(int(bsum/count)>>8, 0, 255)
-	return Color{r, g, b, alpha}
+
+  // if r > g {
+  //   if r > b {
+  //     r = 254
+  //     g = 0
+  //     b = 0
+  //   } else if ( b > r) {
+  //     r = 0
+  //     g = 0
+  //     b = 254
+  //   }
+  // } else if b > g {
+  //   r = 0
+  //   g = 0
+  //   b = 254
+  // } else {
+  //   r = 0
+  //   b = 0
+  //   g = 254
+  // }
+
+  // return Color{r, g, b, alpha}
+
+	return findInPalette(Color{r, g, b, alpha})
+  // return Color{r, g, b, alpha}
 }
 
 func copyLines(dst, src *image.RGBA, lines []Scanline) {

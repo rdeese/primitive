@@ -137,6 +137,43 @@ func clampInt(x, lo, hi int) int {
 	return x
 }
 
+func findInPalette(target Color) Color {
+  var palette [13]Color
+  palette[0] = MakeHexColor("#FFFF00")
+  palette[1] = MakeHexColor("#FF9900")
+  palette[2] = MakeHexColor("#FF3300")
+  palette[3] = MakeHexColor("#CC0033")
+  palette[4] = MakeHexColor("#FF00CC")
+  palette[5] = MakeHexColor("#FFCC33")
+  palette[6] = MakeHexColor("#336666")
+  palette[7] = MakeHexColor("#00CC66")
+  palette[8] = MakeHexColor("#00CCCC")
+  palette[9] = MakeHexColor("#0099FF")
+  palette[10] = MakeHexColor("#0033FF")
+  palette[11] = MakeHexColor("#000000")
+  palette[12] = MakeHexColor("#FFFFFF")
+
+  var distance float64 = float64(^uint(0))
+  var currentDistance float64
+  var closestColor Color
+  for i := 0; i < len(palette); i++ {
+    currentDistance = colorSquaredDistance(target, palette[i])
+    if currentDistance < distance {
+      distance = currentDistance
+      closestColor = palette[i]
+    }
+  }
+
+  return Color{closestColor.R, closestColor.G, closestColor.B, target.A}
+}
+
+func colorSquaredDistance(a, b Color) float64 {
+  rDiff := float64(a.R-b.R)
+  gDiff := float64(a.G-b.G)
+  bDiff := float64(a.B-b.B)
+  return math.Pow(rDiff, 2) + math.Pow(gDiff, 2) + math.Pow(bDiff, 2)
+}
+
 func minInt(a, b int) int {
 	if a < b {
 		return a
