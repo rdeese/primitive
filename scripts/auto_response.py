@@ -27,7 +27,6 @@ def stdout(str):
 def primitive(i, o, n, a, m, rep):
     args = (i, o, n, a, m, rep)
     cmd = 'primitive -r 256 -bg "#FFFFFF" -i %s -o %s -n %d -a %d -m %d -rep %d' % args
-    stdout("Starting primitive job...")
     stdout(cmd)
     subprocess.call(cmd, shell=True)
 
@@ -53,11 +52,12 @@ class ReplyToTweet(TwythonStreamer):
     TwythonStreamer.__init__(self, *args, **kwargs)
 
   def on_success(self, data):
-    stdout("Received a tweet")
-
     tweet = data
     is_retweet = tweet.get('retweeted_status') != None
     from_self = tweet.get('user',{}).get('id_str','') == account_user_id
+    user_handle = tweet.get('user',{}).get('screen_name')
+
+    stdout("Received a tweet from %s" % user_handle)
 
     if not is_retweet and not from_self:
       image_url = first_media_url(tweet)
@@ -68,8 +68,8 @@ class ReplyToTweet(TwythonStreamer):
           out_file = tempfile.NamedTemporaryFile(delete=False)
           out_file.write(resp.content)
           out_file.close()
-          self.jobs_queue.put(out_file.name)
-          stdout("Queued job for URL: %s" % image_url)
+          self.jobs_queue.put((user_handle, image_url, out_file.name))
+          stdout("Queued job: (%s, %s)" % (user_handle, image_url))
         else:
           stdout("Couldn't get media, status code was %d." % resp.status_code)
       else:
@@ -95,20 +95,20 @@ def worker(jobs):
 
   while True:
     stdout("Worker is waiting for a job...")
-    job = jobs.get()
-    stdout("Got a job, starting...")
+    user_handle, image_url, src_file_name = jobs.get()
+    stdout("Starting job: (%s, %s)" % (user_handle, image_url))
     config = configs[random.randrange(len(configs))]
 
     outfile_name = "output-%d.jpg" % outfile_index
     outfile_index += 1
 
-    primitive(job, outfile_name, *config)
-    stdout("Job is done!")
+    primitive(src_file_name, outfile_name, *config)
+    stdout("Rendered job: (%s, %s)" % (user_handle, image_url))
 
     upload_photo(outfile_name)
-    os.remove(job)
+    os.remove(src_file_name)
     os.remove(outfile_name)
-    stdout("Finished job and posted image.")
+    stdout("Finished job: (%s, %s)" % (user_handle, image_url))
 
 if __name__ == '__main__':
   stdout("Starting work")
