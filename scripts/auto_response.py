@@ -26,7 +26,7 @@ twitterApi = API(auth)
 def primitive(i, o, n, a, m, rep):
     args = (i, o, n, a, m, rep)
     cmd = 'primitive -r 256 -bg "#FFFFFF" -i %s -o %s -n %d -a %d -m %d -rep %d' % args
-    print "Command is:"
+    print "Starting primitive job..."
     print cmd
     subprocess.call(cmd, shell=True)
 
@@ -37,32 +37,32 @@ class ReplyToTweet(StreamListener):
 
   def on_data(self, data):
     tweet = json.loads(data.strip())
-    # print json.dumps(tweet, sort_keys=True, indent=4, separators=(',', ': '))
+    # # print json.dumps(tweet, sort_keys=True, indent=4, separators=(',', ': '))
     
     retweeted = tweet.get('retweeted')
     from_self = tweet.get('user',{}).get('id_str','') == account_user_id
 
-    print "gots a tweet"
+    print "Received a tweet"
 
     if retweeted is not None and not retweeted and not from_self:
       if "extended_entities" in tweet and tweet["extended_entities"]["media"][0]["type"] == "photo":
         media_url = tweet["extended_entities"]["media"][0]["media_url"]
-        print "Media url is", media_url
+        print "Grabbing image from URL: ", media_url
         resp = requests.get(media_url)
-        print "Response status is", resp.status_code
+        # print "Response status is", resp.status_code
         if resp.status_code == 200:
           out_file = tempfile.NamedTemporaryFile(delete=False)
           out_file.write(resp.content)
           out_file.close()
           self.jobs_queue.put(out_file.name)
-      else:
-        print "no media"
+      # else:
+      #   print "no media"
 
     return True
 
   def on_error(self, status):
-    print "There was an error!"
-    print status
+    print "A tweepy error occurred! :("
+    # print status
     return True
 
 def worker(jobs):
@@ -70,24 +70,24 @@ def worker(jobs):
   configs = []
   for product in itertools.product(nlist, alist, mlist, replist):
     configs.append(product)
-  print "worker starting"
 
   while True:
     job = jobs.get()
-    print job
+    # print job
     config = configs[random.randrange(len(configs))]
-    print config
+    # print config
     outfile_name = "output-%d.jpg" % outfile_index
     outfile_index += 1
     primitive(job, outfile_name, *config)
     twitterApi.update_with_media(outfile_name)
     os.remove(job)
     os.remove(outfile_name)
+    print "Finished job and posted image."
 
 if __name__ == '__main__':
   jobs = Queue()
 
-  nlist = [5, 10, 20] # [50, 100, 150]
+  nlist = [50, 100, 150]
   alist = [0]
   mlist = [1, 5, 8]
   replist = [0, 20]
