@@ -1,4 +1,5 @@
 from Queue import Queue
+import os
 import json
 import requests
 import tempfile
@@ -57,29 +58,12 @@ class ReplyToTweet(StreamListener):
       else:
         print "no media"
 
-      # tweetId = tweet.get('id_str')
-      # screenName = tweet.get('user',{}).get('screen_name')
-      # tweetText = tweet.get('text')
-
-      # chatResponse = "I know, right?"
-
-      # replyText = '@' + screenName + ' ' + chatResponse
-
-      # #check if repsonse is over 140 char
-      # if len(replyText) > 140:
-      #   replyText = replyText[0:139] + '...'
-
-      # print('Tweet ID: ' + tweetId)
-      # print('From: ' + screenName)
-      # print('Tweet Text: ' + tweetText)
-      # print('Reply Text: ' + replyText)
-
-      # # If rate limited, the status posts should be queued up and sent on an interval
-      # # twitterApi.update_status(status=replyText, in_reply_to_status_id=tweetId)
+    return True
 
   def on_error(self, status):
     print "There was an error!"
     print status
+    return True
 
 def worker(jobs):
   outfile_index = 0
@@ -96,6 +80,9 @@ def worker(jobs):
     outfile_name = "output-%d.jpg" % outfile_index
     outfile_index += 1
     primitive(job, outfile_name, *config)
+    twitterApi.update_with_media(outfile_name)
+    os.remove(job)
+    os.remove(outfile_name)
 
 if __name__ == '__main__':
   jobs = Queue()
