@@ -137,30 +137,31 @@ func clampInt(x, lo, hi int) int {
 	return x
 }
 
-func findInPalette(target Color) Color {
-  var palette [13]Color
-  palette[0] = MakeHexColor("#FFFF00")
-  palette[1] = MakeHexColor("#FF9900")
-  palette[2] = MakeHexColor("#FF3300")
-  palette[3] = MakeHexColor("#CC0033")
-  palette[4] = MakeHexColor("#FF00CC")
-  palette[5] = MakeHexColor("#FFCC33")
-  palette[6] = MakeHexColor("#336666")
-  palette[7] = MakeHexColor("#00CC66")
-  palette[8] = MakeHexColor("#00CCCC")
-  palette[9] = MakeHexColor("#0099FF")
-  palette[10] = MakeHexColor("#0033FF")
-  palette[11] = MakeHexColor("#000000")
-  palette[12] = MakeHexColor("#FFFFFF")
+var paintPalette = []Color{
+  MakeHexColor("#FFFF00"),
+  MakeHexColor("#FF9900"),
+  MakeHexColor("#FF3300"),
+  MakeHexColor("#CC0033"),
+  MakeHexColor("#FF00CC"),
+  MakeHexColor("#FFCC33"),
+  MakeHexColor("#336666"),
+  MakeHexColor("#00CC66"),
+  MakeHexColor("#00CCCC"),
+  MakeHexColor("#0099FF"),
+  MakeHexColor("#0033FF"),
+  MakeHexColor("#000000"),
+  MakeHexColor("#FFFFFF"),
+}
 
+func findInPalette(target Color) Color {
   var distance float64 = float64(^uint(0))
   var currentDistance float64
   var closestColor Color
-  for i := 0; i < len(palette); i++ {
-    currentDistance = colorSquaredDistance(target, palette[i])
+  for i := 0; i < len(paintPalette); i++ {
+    currentDistance = colorSquaredDistance(target, paintPalette[i])
     if currentDistance < distance {
       distance = currentDistance
-      closestColor = palette[i]
+      closestColor = paintPalette[i]
     }
   }
 
