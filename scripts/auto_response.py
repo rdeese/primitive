@@ -10,6 +10,7 @@ import sys
 from retrying import retry
 
 from twython import Twython
+from twython import TwythonError
 from twython import TwythonStreamer
 
 consumer_key = 'qFPPU65i8vHEalWQDrmM61aOz' 
@@ -122,6 +123,14 @@ def worker(jobs):
     os.remove(outfile_name)
     stdout("Finished job: (%s, %s)" % (user_handle, image_url))
 
+def is_twython_error(e):
+  return isinstance(e, TwythonError)
+
+@retry(retry_on_exception=is_twython_error, wait_fixed=2000)
+def stream_twitter_wrapper(streamListener):
+  streamListener.user()
+  stdout("Streaming twitter data!")
+
 if __name__ == '__main__':
   stdout("Starting work")
   jobs = Queue()
@@ -138,5 +147,4 @@ if __name__ == '__main__':
     t.start()
 
   streamListener = ReplyToTweet(consumer_key, consumer_secret, access_token, access_token_secret, jobs_queue=jobs)
-  streamListener.user()
-  stdout("Streaming twitter data!")
+  stream_twitter_wrapper(streamListener)
