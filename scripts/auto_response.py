@@ -51,8 +51,11 @@ def update_status_wrapper(media_id):
 
 def upload_photo(path):
   photo = open(path, 'rb')
-  response = upload_media_wrapper(photo)
-  update_status_wrapper(response['media_id'])
+  try:
+    response = upload_media_wrapper(photo)
+    update_status_wrapper(response['media_id'])
+  except TwythonError as e:
+    stdout("Photo upload failed with message: %s", e.msg)
 
 class ReplyToTweet(TwythonStreamer):
   def __init__(self, *args, **kwargs):
