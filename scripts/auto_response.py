@@ -7,6 +7,7 @@ import random
 import threading
 import subprocess
 import sys
+from retrying import retry
 
 from twython import Twython
 from twython import TwythonStreamer
@@ -40,10 +41,18 @@ def first_media_url(tweet):
         return media_entry.get("media_url")
   return None
 
+@retry(stop_max_delay=10000, wait_fixed=500)
+def upload_media_wrapper(file):
+  return twitter.upload_media(media=file)
+
+@retry(stop_max_delay=10000, wait_fixed=500)
+def update_status_wrapper(media_id):
+  twitter.update_status(status='', media_ids=[media_id])
+
 def upload_photo(path):
   photo = open(path, 'rb')
-  response = twitter.upload_media(media=photo)
-  twitter.update_status(status='', media_ids=[response['media_id']])
+  response = upload_media_wrapper(photo)
+  update_status_wrapper(response['media_id'])
 
 class ReplyToTweet(TwythonStreamer):
   def __init__(self, *args, **kwargs):
