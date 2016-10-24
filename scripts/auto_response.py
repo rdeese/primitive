@@ -27,7 +27,7 @@ def stdout(str):
 
 def primitive(i, o, n, a, m, rep):
     args = (i, o, n, a, m, rep)
-    cmd = 'primitive -r 256 -bg "#FFFFFF" -i %s -o %s -n %d -a %d -m %d -rep %d' % args
+    cmd = 'primitive -r 256 -bg "#FFFFFF" -s 1280 -i %s -o %s -n %d -a %d -m %d -rep %d' % args
     stdout(cmd)
     subprocess.call(cmd, shell=True)
 
