@@ -7,6 +7,7 @@ import random
 import threading
 import subprocess
 import sys
+from datetime import datetime
 from retrying import retry
 
 from twython import Twython
@@ -21,8 +22,8 @@ account_user_id = '789981061186920448'
 
 twitter = Twython(consumer_key, consumer_secret, access_token, access_token_secret)
 
-def stdout(str):
-  sys.stdout.write(str)
+def stdout(string):
+  sys.stdout.write("%s | %s" % (str(datetime.now()), string))
   sys.stdout.write("\n")
   sys.stdout.flush()
 
@@ -42,21 +43,28 @@ def first_media_url(tweet):
         return media_entry.get("media_url")
   return None
 
-@retry(stop_max_delay=10000, wait_fixed=500)
-def upload_media_wrapper(file):
-  return twitter.upload_media(media=file)
+@retry(stop_max_delay=10000, wait_fixed=2000)
+def upload_media_wrapper(path):
+  photo = open(path, 'rb')
+  stdout("Trying to upload %s" % photo.name)
+  return twitter.upload_media(media=photo)
+  photo.close()
 
-@retry(stop_max_delay=10000, wait_fixed=500)
+@retry(stop_max_delay=10000, wait_fixed=2000)
 def update_status_wrapper(media_id):
+  stdout("Trying to update status with media_id: %s" % str(media_id))
   twitter.update_status(status='', media_ids=[media_id])
 
 def upload_photo(path):
-  photo = open(path, 'rb')
   try:
-    response = upload_media_wrapper(photo)
-    update_status_wrapper(response['media_id'])
+    response = upload_media_wrapper(path)
   except TwythonError as e:
-    stdout("Photo upload failed with message: %s", e.msg)
+    stdout("Photo upload failed with message: %s" % e.msg)
+  else:
+    try:
+      update_status_wrapper(response['media_id'])
+    except TwythonError as e:
+      stdout("Status update failed with message: %s" % e.msg)
 
 class ReplyToTweet(TwythonStreamer):
   def __init__(self, *args, **kwargs):
@@ -81,8 +89,8 @@ class ReplyToTweet(TwythonStreamer):
           out_file = tempfile.NamedTemporaryFile(delete=False)
           out_file.write(resp.content)
           out_file.close()
+          stdout("Queuing job: (%s, %s)" % (user_handle, image_url))
           self.jobs_queue.put((user_handle, image_url, out_file.name))
-          stdout("Queued job: (%s, %s)" % (user_handle, image_url))
         else:
           stdout("Couldn't get media, status code was %d." % resp.status_code)
       else:
@@ -126,10 +134,10 @@ def worker(jobs):
 def is_twython_error(e):
   return isinstance(e, TwythonError)
 
-@retry(retry_on_exception=is_twython_error, wait_fixed=2000)
+@retry(wait_fixed=2000)
 def stream_twitter_wrapper(streamListener):
-  streamListener.user()
   stdout("Streaming twitter data!")
+  streamListener.user()
 
 if __name__ == '__main__':
   stdout("Starting work")
